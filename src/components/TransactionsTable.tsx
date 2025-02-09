@@ -66,6 +66,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
         return 0;
     });
 
+    // @ts-ignore
     return (
         <Paper>
             <Typography variant="h6" component="div" sx={{ padding: 2 }}>
@@ -156,6 +157,9 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                                     }}
                                     slotProps={{
                                         actions: {
+                                            previousButton: {
+                                                disabled: false,
+                                            },
                                             nextButton: {
                                                 disabled: !transactions.next,
                                             },
