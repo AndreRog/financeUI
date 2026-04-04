@@ -16,6 +16,15 @@ import {
 } from "@mui/material";
 import { Transaction } from "../services/transactions.service.ts";
 
+// Helper function to format date in European format DD-MM-YYYY
+const formatDateEuropean = (dateString: string): string => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+};
+
 interface TransactionTable {
     bankName: string;
     date: string;
@@ -106,7 +115,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                                 <TableCell>{transaction.bankName}</TableCell>
                                 <TableCell>{transaction.description}</TableCell>
                                 <TableCell>
-                                    {new Date(transaction.date).toLocaleDateString()}
+                                    {formatDateEuropean(transaction.date)}
                                 </TableCell>
                                 <TableCell>{transaction.amount.toFixed(2)}</TableCell>
                                 <TableCell>{transaction.finalBalance.toFixed(2)}</TableCell>
