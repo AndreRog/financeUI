@@ -4,10 +4,10 @@ export enum BankType {
         'ACTIV BANK' = "ACTIV BANK"
 }
 
-export interface Dimension {
-        dimension: string;
-        name: string;
-        value: number;
+export interface AggregatedResult {
+        period: string | null;
+        groupKey: string | null;
+        total: number;
 }
 
 export interface Transaction {
@@ -25,7 +25,7 @@ export interface SearchExpenses {
         next: {
                 href: string;
         }
-        _embedded: Transaction[] | Dimension[];
+        data: Transaction[] | AggregatedResult[];
 }
 
 export interface ClassifiedTransaction {
@@ -38,7 +38,7 @@ export interface ImportResponse {
         next: {
                 href: string;
         }
-        _embedded: ClassifiedTransaction[];
+        data: ClassifiedTransaction[];
 }
 
 
@@ -66,7 +66,7 @@ export const getExpenses = async (from: string, to: string, dimensions: string[]
         cursor: string): Promise<SearchExpenses> => {
         console.log(`Log add parameters: ${cursor}`);
         try {
-                const searchUrl: URL = new URL(`${API_URL}/transactions/search`);
+                const searchUrl: URL = new URL(`${API_URL}/transactions`);
                 let urlSearchParams = searchUrl.searchParams;
 
                 if (from && from.trim().length > 0) {
@@ -98,7 +98,7 @@ export const getExpenses = async (from: string, to: string, dimensions: string[]
         return {
                 next: {
                         href: ""
-                }, _embedded: []
+                }, data: []
         };
 }
 
@@ -111,8 +111,8 @@ export const updateTx = async (updatedTx: Transaction | undefined): Promise<void
                 console.debug(`Updated tx: ${JSON.stringify(updatedTx)}`);
                 const body = { category: updatedTx.category }
 
-                const response = await fetch(`${API_URL}transactions/${updatedTx.id}`, {
-                        method: 'PUT',
+                const response = await fetch(`${API_URL}/transactions/${updatedTx.id}`, {
+                        method: 'PATCH',
                         headers: {
                                 'Content-Type': 'application/json',
                                 // Add any additional headers like authorization if needed
@@ -130,13 +130,21 @@ export const updateTx = async (updatedTx: Transaction | undefined): Promise<void
         }
 }
 
-export const getCategories = async () => {
+export interface Category {
+        id: string;
+        name: string;
+        type: 'INCOME' | 'EXPENSE' | 'EXCLUDED';
+        subcategories: Category[];
+}
+
+export const getCategories = async (): Promise<string[]> => {
         try {
-                const response = await fetch(`${API_URL}/transactions/categories`);
+                const response = await fetch(`${API_URL}/categories`);
                 if (response.ok) {
-                        const transactions: string[] = await response.json();
-                        console.log(transactions);
-                        return transactions;
+                        const categories: Category[] = await response.json();
+                        // Backend now returns a 2-level Category tree; the assignable
+                        // values for tagging a transaction are the subcategory names.
+                        return categories.flatMap(c => c.subcategories).map(s => s.name);
                 } else {
                         return [];
                 }
@@ -152,12 +160,12 @@ export const importTransactions = async (file: File, type: string): Promise<{ su
                 formData.append('file', file);
                 formData.append('type', type);
 
-                const response = await fetch(`${API_URL}/transactions/import`, {
+                const response = await fetch(`${API_URL}/transactions`, {
                         method: 'POST',
                         body: formData
                 });
 
-                if (response.ok) {
+                if (response.status === 201 || response.ok) {
                         const rawResult = await response.json();
                         console.log("=== IMPORT RESPONSE ===")
                         console.log("Raw response:", rawResult)
@@ -166,12 +174,12 @@ export const importTransactions = async (file: File, type: string): Promise<{ su
                         // Backend returns an array directly, not wrapped in an object
                         // Wrap it in the expected ImportResponse structure
                         const result: ImportResponse = Array.isArray(rawResult)
-                                ? { next: { href: "" }, _embedded: rawResult }
+                                ? { next: { href: "" }, data: rawResult }
                                 : rawResult;
 
                         console.log("Normalized result:", result)
-                        console.log("Has _embedded:", !!result._embedded)
-                        console.log("_embedded length:", result._embedded?.length)
+                        console.log("Has data:", !!result.data)
+                        console.log("data length:", result.data?.length)
                         console.log("======================")
                         return { success: true, data: result };
                 } else {

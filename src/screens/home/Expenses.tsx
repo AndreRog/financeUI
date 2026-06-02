@@ -148,7 +148,7 @@ const Expenses = () => {
                         // Keep fetching until we have all transactions
                         while (hasMore) {
                                 const response = await getExpenses(startDate, endDate, noDimension, currentCursor);
-                                const transactions = response._embedded as Transaction[];
+                                const transactions = response.data as Transaction[];
                                 allTxs = [...allTxs, ...transactions];
 
                                 // Check if there's a next page
@@ -185,17 +185,31 @@ const Expenses = () => {
         }
 
         const categoryUpdate = async (txId: string, category: string) => {
-                const transactions: Transaction[] = transactionsList?._embedded as Transaction[];
-                let tx: Transaction | undefined = transactions.find(tx => tx.id === txId);
+                const transactions: Transaction[] = transactionsList?.data as Transaction[];
+                const tx: Transaction | undefined = transactions.find(tx => tx.id === txId);
 
                 if (tx === undefined) {
-                        console.log(`Transaction not found ${JSON.stringify(tx)}`);
+                        console.log(`Transaction not found ${txId}`);
                         return;
                 }
 
-                // @ts-ignore
-                tx.category = category;
-                await updateTx(tx);
+                // Optimistically update the cache with new object references so React
+                // re-renders the dropdown immediately instead of waiting for a refetch.
+                queryClient.setQueryData(
+                        ["transactions", startDate, endDate, noDimension, cursor],
+                        (old: typeof transactionsList) => old && {
+                                ...old,
+                                data: (old.data as Transaction[]).map(t =>
+                                        t.id === txId ? { ...t, category } : t
+                                ),
+                        }
+                );
+
+                await updateTx({ ...tx, category });
+
+                // Refresh derived data (category charts, yearly totals) from the server.
+                queryClient.invalidateQueries({ queryKey: ["transactions"] });
+                queryClient.invalidateQueries({ queryKey: ["allTransactions"] });
         }
 
         const addExpense = () => {
@@ -312,14 +326,14 @@ const Expenses = () => {
         };
 
         const handleApplyAll = async () => {
-                if (!importResults?._embedded) return;
+                if (!importResults?.data) return;
 
                 setImporting(true);
                 let successCount = 0;
                 let errorCount = 0;
 
-                for (let index = 0; index < importResults._embedded.length; index++) {
-                        const item = importResults._embedded[index];
+                for (let index = 0; index < importResults.data.length; index++) {
+                        const item = importResults.data[index];
 
                         // Skip if already applied or no ID
                         if (appliedTransactions.has(index) || !item.record.id) continue;
@@ -370,14 +384,14 @@ const Expenses = () => {
                         return null;
                 }
 
-                if (!importResults._embedded) {
-                        console.log("❌ importResults._embedded is missing");
+                if (!importResults.data) {
+                        console.log("❌ importResults.data is missing");
                         console.log("Available keys:", Object.keys(importResults));
                         return null;
                 }
 
                 console.log("✓ Computing import summary");
-                const transactions = importResults._embedded;
+                const transactions = importResults.data;
                 console.log("Transactions type:", typeof transactions);
                 console.log("Is array:", Array.isArray(transactions));
 
@@ -435,37 +449,37 @@ const Expenses = () => {
                 if (!data) {
                         return {
                                 next: "",
-                                _embedded: []
+                                data: []
                         };
                 }
 
                 return {
                         next: data.next?.href || "",
-                        _embedded: data._embedded as Transaction[]
+                        data: data.data as Transaction[]
                 }
         }
 
         const toPieChart = (data: SearchExpenses | undefined) => {
-                if (!data || !data._embedded) {
+                if (!data || !data.data) {
                         return [];
                 }
                 console.log(`data of request`);
                 console.log(data);
 
-                // Check if the data is already grouped (Dimension[]) or individual transactions (Transaction[])
-                const firstItem = data._embedded[0];
+                // Check if the data is already grouped (AggregatedResult[]) or individual transactions (Transaction[])
+                const firstItem = data.data[0];
 
-                // If it has a 'dimension' property, it's a Dimension object (already grouped)
-                if (firstItem && 'dimension' in firstItem) {
-                        const dimensionsArray = data._embedded as { dimension: string; name: string; value: number }[];
-                        return dimensionsArray.map((dim, index) => ({
-                                id: dim.name || `category-${index}`,
-                                label: dim.name || 'NONE',
-                                value: Math.abs(dim.value)
+                // If it has a 'groupKey' property, it's an AggregatedResult (already grouped)
+                if (firstItem && 'groupKey' in firstItem) {
+                        const aggregatedArray = data.data as { groupKey: string | null; total: number }[];
+                        return aggregatedArray.map((agg, index) => ({
+                                id: agg.groupKey || `category-${index}`,
+                                label: agg.groupKey || 'NONE',
+                                value: Math.abs(agg.total)
                         }));
                 } else {
                         // Otherwise, it's Transaction[] (needs grouping)
-                        const transactionsArray = data._embedded as Transaction[];
+                        const transactionsArray = data.data as Transaction[];
                         const grouped: Record<string, number> = {};
 
                         transactionsArray.forEach((tx: Transaction) => {
@@ -754,7 +768,7 @@ const Expenses = () => {
                                                                 Imported Transactions
                                                         </Typography>
                                                         <Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
-                                                                {importResults?._embedded.map((item, index) => (
+                                                                {importResults?.data.map((item, index) => (
                                                                         <Box
                                                                                 key={index}
                                                                                 sx={{
@@ -883,8 +897,8 @@ const Expenses = () => {
                                         <Button
                                                 onClick={handleApplyAll}
                                                 variant="contained"
-                                                disabled={importing || !importResults?._embedded ||
-                                                        appliedTransactions.size === importResults._embedded.filter(item => item.record.id).length}
+                                                disabled={importing || !importResults?.data ||
+                                                        appliedTransactions.size === importResults.data.filter(item => item.record.id).length}
                                                 startIcon={importing ? <CircularProgress size={20} color="inherit" /> : <Check />}
                                                 sx={{
                                                         background: 'linear-gradient(45deg, #4caf50 30%, #45a049 90%)',

@@ -36,7 +36,7 @@ interface TransactionTable {
 
 export interface SearchTransactions {
     next: string,
-    _embedded: Transaction[];
+    data: Transaction[];
 }
 
 interface TransactionsTableProps {
@@ -64,7 +64,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
         onCategoryUpdate(txId, category);
     };
 
-    const sortedData = transactions?._embedded.slice().sort((a, b) => {
+    const sortedData = transactions?.data.slice().sort((a, b) => {
         if (orderBy === "date") {
             return order === "asc"
                 ? new Date(a?.date).getTime() - new Date(b?.date).getTime()
