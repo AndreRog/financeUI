@@ -1,0 +1,160 @@
+/* ============================================================
+   MONEYMIND — global stylesheet (Tailwind v4 entry)
+
+   Import order:
+     1. design tokens (single source of truth, both themes)
+     2. the .mm-* component classes built on those tokens
+     3. Tailwind itself
+     4. tw-animate-css (Radix/shadcn enter/leave animations)
+   Then a @theme inline block bridges the CSS-variable tokens to
+   Tailwind utilities (bg-surface, text-secondary, rounded-lg, …)
+   and to the names shadcn/ui components expect.
+   ============================================================ */
+
+@import "./tokens.css";
+@import "./moneymind.css";
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Theme is driven by data-theme on <html>, not a .dark class, so bind
+   Tailwind's `dark:` variant (used by shadcn primitives) to it. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ------------------------------------------------------------
+   shadcn/ui compatibility aliases.
+   shadcn components reference semantic names (popover, muted,
+   accent, ring, …). Map them onto MoneyMind tokens once here;
+   because they resolve through var(), they re-theme automatically
+   with data-theme. --primary / --border already exist in tokens.css
+   with the same meaning, so they are not redefined.
+   ------------------------------------------------------------ */
+:root {
+  --background: var(--bg);
+  --foreground: var(--text-primary);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-primary);
+  --primary-foreground: var(--on-primary);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--primary-soft);
+  --accent-foreground: var(--primary-soft-text);
+  --destructive: var(--expense);
+  --destructive-foreground: var(--on-primary);
+  --input: var(--border);
+  --ring: var(--focus-ring);
+  --radius: var(--radius-md);
+}
+
+/* ------------------------------------------------------------
+   Token bridge — @theme inline so utilities resolve to var(--token)
+   and stay live across theme switches.
+   ------------------------------------------------------------ */
+@theme inline {
+  /* Surfaces & structure */
+  --color-background: var(--bg);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-inset: var(--surface-inset);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  /* Text */
+  --color-foreground: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
+
+  /* Brand */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-text: var(--primary-soft-text);
+  --color-on-primary: var(--on-primary);
+
+  /* Finance semantics */
+  --color-income: var(--income);
+  --color-income-soft: var(--income-soft);
+  --color-expense: var(--expense);
+  --color-expense-soft: var(--expense-soft);
+  --color-savings: var(--savings);
+  --color-excluded: var(--excluded);
+  --color-amber: var(--amber);
+
+  /* shadcn semantic names */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Category dots */
+  --color-cat-groceries: var(--cat-groceries);
+  --color-cat-transport: var(--cat-transport);
+  --color-cat-dining: var(--cat-dining);
+  --color-cat-bills: var(--cat-bills);
+  --color-cat-shopping: var(--cat-shopping);
+  --color-cat-housing: var(--cat-housing);
+  --color-cat-health: var(--cat-health);
+  --color-cat-leisure: var(--cat-leisure);
+  --color-cat-education: var(--cat-education);
+  --color-cat-fees: var(--cat-fees);
+  --color-cat-other: var(--cat-other);
+  --color-cat-savings: var(--cat-savings);
+
+  /* Radii — literal design-system values (override Tailwind defaults,
+     register the custom `rounded-pill`). These are constants, so inlining
+     a literal avoids any same-name self-reference. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+}
+
+/* Shadows are theme-dependent and named identically to Tailwind's own
+   namespace, so they are NOT mapped here. The .mm-* component classes read
+   var(--shadow-sm/md) directly (theme-aware); shadcn's shadow-* utilities
+   fall back to Tailwind defaults, which is fine for menus/dialogs. */
+
+/* ------------------------------------------------------------
+   Base layer
+   ------------------------------------------------------------ */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    /* Gentle theme switch (handoff: 0.3s, no bounce). */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.5;
+    /* Inter character variants enabled globally per the design system. */
+    font-feature-settings: "cv05" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  *:focus-visible {
+    outline: none;
+  }
+}

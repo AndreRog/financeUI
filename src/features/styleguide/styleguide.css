@@ -1,0 +1,61 @@
+/* ============================================================
+   Styleguide-only: scoped theming.
+   The shipped tokens target :root[data-theme=...], so a nested
+   subtree cannot be themed independently. To render light AND dark
+   side by side, re-apply the semantic token mappings to a scoped
+   .sg-panel. Values reference the theme-independent grey/teal scales
+   (defined in :root), so this stays in sync with tokens.css.
+   Dev-only; not used by real screens.
+   ============================================================ */
+
+.sg-panel[data-theme="light"] {
+  --bg: var(--grey-50);
+  --surface: var(--grey-0);
+  --surface-2: var(--grey-100);
+  --surface-inset: var(--grey-50);
+  --text-primary: var(--grey-900);
+  --text-secondary: var(--grey-600);
+  --text-tertiary: oklch(0.55 0.008 240);
+  --border: var(--grey-200);
+  --border-strong: var(--grey-300);
+  --primary: var(--teal-600);
+  --primary-hover: var(--teal-700);
+  --primary-soft: var(--teal-50);
+  --primary-soft-text: var(--teal-700);
+  --on-primary: #ffffff;
+  --income: var(--green-light);
+  --income-soft: oklch(0.955 0.03 152);
+  --expense: var(--red-light);
+  --expense-soft: oklch(0.955 0.03 27);
+  --focus-ring: oklch(0.585 0.085 209 / 0.35);
+  --shadow-sm: 0 1px 2px oklch(0.2 0.02 240 / 0.06), 0 1px 3px oklch(0.2 0.02 240 / 0.05);
+  --shadow-md: 0 2px 4px oklch(0.2 0.02 240 / 0.06), 0 6px 16px oklch(0.2 0.02 240 / 0.08);
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+.sg-panel[data-theme="dark"] {
+  --bg: var(--grey-950);
+  --surface: var(--grey-900);
+  --surface-2: var(--grey-800);
+  --surface-inset: oklch(0.180 0.006 246);
+  --text-primary: var(--grey-50);
+  --text-secondary: var(--grey-300);
+  --text-tertiary: var(--grey-400);
+  --border: oklch(0.300 0.006 242);
+  --border-strong: var(--grey-700);
+  --primary: var(--teal-400);
+  --primary-hover: var(--teal-300);
+  --primary-soft: oklch(0.350 0.054 213 / 0.35);
+  --primary-soft-text: var(--teal-300);
+  --on-primary: oklch(0.180 0.02 220);
+  --income: var(--green-dark);
+  --income-soft: oklch(0.420 0.06 152 / 0.30);
+  --expense: var(--red-dark);
+  --expense-soft: oklch(0.420 0.07 27 / 0.30);
+  --focus-ring: oklch(0.690 0.078 209 / 0.45);
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-md: 0 2px 6px oklch(0 0 0 / 0.45), 0 8px 24px oklch(0 0 0 / 0.40);
+  background: var(--bg);
+  color: var(--text-primary);
+}
