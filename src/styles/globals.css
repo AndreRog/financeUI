@@ -13,6 +13,7 @@
 
 @import "./tokens.css";
 @import "./moneymind.css";
+@import "./guest.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 
