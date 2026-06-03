@@ -55,7 +55,7 @@ export function AppRouter() {
       </Route>
 
       {/* Dev-only styleguide. */}
-      {import.meta.env.DEV && <Route path="/styleguide" element={<StyleguideScreen />} />}
+      {import.meta.env.DEV ? <Route path="/styleguide" element={<StyleguideScreen />} /> : null}
 
       <Route path="*" element={<NotFound />} />
     </Routes>

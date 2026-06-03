@@ -41,22 +41,18 @@ export const getExpenses = async (
   dimensions: string[],
   cursor: string,
 ): Promise<SearchExpenses> => {
-  try {
-    const url = new URL(`${API_URL}/transactions`)
-    const params = url.searchParams
-    if (from?.trim()) params.append('from', from)
-    if (to?.trim()) params.append('to', to)
-    if (dimensions?.length) params.append('dimension', dimensions.join(','))
-    if (cursor?.trim()) params.append('cursor', cursor)
+  const url = new URL(`${API_URL}/transactions`)
+  const params = url.searchParams
+  if (from?.trim()) params.append('from', from)
+  if (to?.trim()) params.append('to', to)
+  if (dimensions?.length) params.append('dimension', dimensions.join(','))
+  if (cursor?.trim()) params.append('cursor', cursor)
 
-    const response = await fetch(url)
-    if (response.ok) {
-      return (await response.json()) as SearchExpenses
-    }
-  } catch (error) {
-    console.error('Error fetching transactions:', error)
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch transactions (${response.status})`)
   }
-  return { next: { href: '' }, data: [] }
+  return (await response.json()) as SearchExpenses
 }
 
 export const updateTx = async (updatedTx: Transaction | undefined): Promise<void> => {
@@ -73,14 +69,10 @@ export const updateTx = async (updatedTx: Transaction | undefined): Promise<void
 
 /** Returns the assignable subcategory names (the backend sends a 2-level tree). */
 export const getCategories = async (): Promise<string[]> => {
-  try {
-    const response = await fetch(`${API_URL}/categories`)
-    if (response.ok) {
-      const categories = (await response.json()) as Category[]
-      return categories.flatMap((c) => c.subcategories).map((s) => s.name)
-    }
-  } catch (error) {
-    console.error('Error fetching categories:', error)
+  const response = await fetch(`${API_URL}/categories`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch categories (${response.status})`)
   }
-  return []
+  const categories = (await response.json()) as Category[]
+  return categories.flatMap((c) => c.subcategories).map((s) => s.name)
 }
