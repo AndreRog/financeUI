@@ -1,120 +1,97 @@
-# CLAUDE.md
+# CLAUDE.md — financeSPA
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code working in the MoneyMind frontend (`financeSPA/`).
 
-## Project Overview
+## What this is
 
-FinanceSPA is a React-based single-page application for managing personal finance transactions. The application uses Vite as the build tool, Material-UI for the component library, and integrates with a backend API for transaction management. Authentication is implemented via Keycloak (currently commented out in main.tsx).
+A greenfield rebuild of the MoneyMind SPA on the Claude Design handoff (`/handoff`). The app is
+a **skeleton that receives generated screens**: Claude Design (Track 1) emits React/TSX screens
+that use the design-system CSS variables and `.mm-*` classes; this app (Track 2) provides the
+token bridge, the `.mm-*` stylesheet, the ported primitives, and the routing/shell so those
+screens drop into `src/features/<name>/` with minimal change. See
+`../docs/design/spa-architecture.md` and `../docs/design/README.md`.
 
-## Development Commands
+## Stack (locked — see spa-architecture.md for rationale)
 
-### Running the Application
+| Concern | Choice |
+|---|---|
+| Styling | **Tailwind CSS v4** (`@tailwindcss/vite`, `@theme` over the handoff tokens) |
+| Components | **shadcn/ui** (Radix primitives, owned in `src/components/ui/`) |
+| Charts | **Recharts** (themed off the same CSS vars) |
+| Routing | **React Router v7** (`react-router`) |
+| Server state | **TanStack Query v5** |
+| Theme | `data-theme="light\|dark"` on `<html>` via `ThemeModeProvider` |
+| Icons | Inline Lucide (`Icon` + the handoff path set; `lucide-react` for chrome) |
+
+No MUI, no Chart.js, no Emotion. Keycloak is removed until auth lands (issue 0005).
+
+## Commands
+
 ```bash
-npm run dev
-```
-Starts the development server at http://127.0.0.1:3000
-
-### Building
-```bash
-npm run build
-```
-Compiles TypeScript and builds the application for production
-
-### Linting
-```bash
-npm run lint
-```
-Runs ESLint with TypeScript rules
-
-### Preview Production Build
-```bash
-npm run preview
+npm run dev      # Vite dev server on http://localhost:3000
+npm run build    # tsc + vite build (type-check + production bundle)
+npm run lint     # ESLint (max-warnings 0)
+npm run preview  # preview the production build
 ```
 
-## Architecture
-
-### Directory Structure
+## Layout
 
 ```
 src/
-├── assets/theme/          # MUI theme configuration and theme provider
-├── auth/                  # Authentication context and Keycloak integration
-├── components/            # Reusable UI components (charts, tables, buttons)
-├── error/                 # Error boundary components
-├── pages/                 # Page-level components (routes)
-├── screens/               # Screen components used by pages
-│   └── home/
-├── services/              # API service layer for backend communication
-└── main.tsx               # Application entry point
+  app/        main.tsx (providers), router.tsx, AppShell.tsx, AuthBoundary.tsx
+  styles/     tokens.css (handoff tokens + added), moneymind.css (.mm-*), globals.css (Tailwind + bridge)
+  theme/      ThemeModeProvider.tsx + useThemeMode()
+  components/ ported primitives (Icon, Button, Chip, SummaryCard, TxnRow, PagePlaceholder)
+              ui/ — shadcn primitives (Select, Dialog, Popover, DropdownMenu, Tabs)
+  features/   guest, auth, dashboard, trend, comparison, transactions, accounts, categories,
+              styleguide — one screen folder each (placeholders until Claude Design fills them)
+  services/   typed DTOs + fetch wrappers + TanStack Query hooks (the carried-over pattern)
+  lib/        money.ts (fmt/fmtSigned), date.ts, categories.ts (CAT_COLOR), cn.ts
 ```
 
-### Key Architectural Patterns
+Provider order (`app/main.tsx`): `ThemeModeProvider` → `QueryClientProvider` → `BrowserRouter` →
+router. The `AuthBoundary` lives inside the router so public routes (`/guest`, `/login`,
+`/register`) work before auth exists. Visit `/styleguide` (dev-only) to see tokens + components in
+both themes.
 
-**Theme Management**: The app uses a custom theme context (`ThemeProviderContext`) that wraps Material-UI's ThemeProvider. Access the theme toggle with `useThemeMode()` hook. The theme configuration is in `src/assets/theme/theme.ts`.
+## The design system — rules to code by
 
-**Authentication**: Keycloak integration is set up via `KeycloakAuthenticationBoundary` and `AuthContext`. The boundary is currently commented out in `main.tsx` but ready to be enabled. The authentication state is managed through React Context and can be accessed via `useAuthentication()` hook.
+The single source of truth is `src/styles/tokens.css` (a verbatim copy of
+`handoff/colors_and_type.css` plus a few added tokens, each flagged). **Do not redefine colour,
+type, spacing, or radii** — reference the tokens.
 
-**Data Fetching**: Uses TanStack Query (React Query) for server state management. The QueryClient is instantiated at the page level (see `src/pages/home.tsx`). API services are in `src/services/transactions.service.ts`.
+- **Theming:** `data-theme` on `<html>`; both themes are fully defined in tokens.css. Tailwind
+  utilities (`bg-surface`, `text-secondary`, `rounded-lg`, …) resolve to the tokens via the
+  `@theme inline` bridge in `globals.css`. The `dark:` variant is bound to `[data-theme="dark"]`.
+- **`.mm-*` classes** (`src/styles/moneymind.css`) are the component look — `.mm-btn*`, `.mm-chip*`,
+  `.mm-summary*`, `.mm-txn*`, `.mm-card`. Generated screens use these; the ported components render
+  them. Keep them faithful to the handoff anatomy.
+- **Money:** always pt-PT (`1.234,56 €`) via `fmt`/`fmtSigned` from `@/lib/money` (Unicode minus
+  `−`), and always add the `.tnum` class (tabular numerals). Never render a money value without it.
+- **Expense amounts are NOT red** in lists/cards (they use `--text-primary`). Only KPI trend
+  **deltas** use `--income` / `--expense` colour.
+- **Income vs expense is decided by Category Type** (INCOME/EXPENSE/EXCLUDED), not the amount sign.
+  EXCLUDED transactions never appear in any total or breakdown. Savings = income − expense.
+- **Copy:** sentence case everywhere (eyebrow/overline labels are the only ALL CAPS). No emoji.
+  Second person implied. pt-PT sample data (Continente, EDP Comercial, Salário — Acme Lda.).
+- **Visual restraint:** flat backgrounds, borders define structure, **two elevation steps**
+  (`--shadow-sm` resting, `--shadow-md` raised/hover). Focus = 3px teal glow
+  (`box-shadow: 0 0 0 3px var(--focus-ring)`), never a hard outline. Gentle 0.14–0.3s transitions,
+  no bounces. No gradients (except the logo), no photography, no textures.
 
-**Routing**: Uses React Router v7 with routes defined in `main.tsx`. Current route structure:
-- `/` → HomePage → Expenses screen
+## Services & data
 
-### API Integration
+`src/services/` keeps the established pattern (typed DTO + `fetch` wrapper + a TanStack Query
+hook). The existing functions target the **old** single-user backend and are rewritten against the
+new multi-user backend as issues 0004–0013 land. Until then, screens use mock hooks — e.g.
+`usePeriodSummary` (`summary.service.ts`) returns a mock `PeriodSummary` shaped like the future
+reporting engine. Swap the `queryFn` for a real `apiFetch` call when the endpoint exists; the
+component contract stays the same.
 
-The backend API URL is configured via environment variable `VITE_API_URL` in `.env` (default: http://localhost:9000).
+`VITE_API_URL` (`.env`) is the backend base URL (default `http://localhost:9000`).
 
-**Key API Service Functions** (src/services/transactions.service.ts):
-- `getExpenses(from, to, dimensions, cursor)` - Fetch transactions with cursor-based pagination
-- `updateTx(transaction)` - Update transaction category
-- `getCategories()` - Fetch available categories
-- `getBankTypes()` - Fetch supported bank types (currently returns empty array)
+## Integrating a Claude Design screen
 
-All services use the native `fetch` API and return promises.
-
-### Component Organization
-
-**Pages vs Screens**: Pages (in `src/pages/`) are route-level components that set up data providers (like QueryClient). Screens (in `src/screens/`) contain the actual UI implementation.
-
-**Charts**: Multiple chart implementations available:
-- `LineChart.tsx` - Line chart component
-- `LineStackBarChart.tsx` - Stacked bar chart with line overlay
-- Uses both Chart.js (react-chartjs-2) and MUI X-Charts (@mui/x-charts)
-
-**TransactionsTable**: Main table component for displaying and editing transactions. Supports inline category updates.
-
-### TypeScript Configuration
-
-Strict mode is enabled with these key settings:
-- Target: ES2020
-- Module resolution: bundler (Vite-specific)
-- JSX: react-jsx (new JSX transform)
-- Strict linting enabled (noUnusedLocals, noUnusedParameters, noFallthroughCasesInSwitch)
-
-### Environment Variables
-
-Required environment variables in `.env`:
-- `VITE_API_URL` - Backend API base URL
-- `VITE_PUBLIC_CLIENT_ID` - Keycloak client ID (when auth is enabled)
-
-## Keycloak Authentication
-
-When enabling Keycloak authentication:
-1. Uncomment `<KeycloakAuthenticationBoundary>` wrapper in `src/main.tsx`
-2. Configure Keycloak settings in `src/auth/KeycloakAuthenticationBoundary.tsx` (currently hardcoded to localhost:8080)
-3. Ensure `VITE_PUBLIC_CLIENT_ID` is set in `.env`
-
-The authentication flow uses `useKeycloak()` hook which manages the Keycloak instance lifecycle.
-
-## State Management
-
-- **Theme**: React Context via `ThemeProviderContext`
-- **Authentication**: React Context via `AuthenticationContext`
-- **Server State**: TanStack Query (React Query)
-- **Local Component State**: React useState hooks
-
-## Styling
-
-The application uses a combination of:
-- Material-UI components with custom theming
-- Tailwind CSS (configured but minimal usage)
-- Emotion for styled components (Material-UI dependency)
+1. Drop the generated TSX into `src/features/<name>/`, replacing the placeholder.
+2. Swap its mock data for a TanStack Query hook over `src/services/`.
+3. Reconcile any class names to the owned `.mm-*` classes / ported components.
