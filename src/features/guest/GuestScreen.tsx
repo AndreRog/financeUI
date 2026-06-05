@@ -4,22 +4,8 @@ import { Icon } from '@/components/Icon'
 import { Button } from '@/components/Button'
 import { useThemeMode } from '@/theme/ThemeModeProvider'
 import { fmt, fmtSigned } from '@/lib/money'
-import {
-  useGuestImport,
-  UnsupportedBankError,
-  type GuestReview,
-  type GuestMonthlyReview,
-} from '@/services/guest.service'
-
-/**
- * Public guest landing + instant monthly review (issue 0004). A visitor drops a
- * bank CSV, the backend parses + classifies + summarises it in memory (nothing
- * persisted), and we render a calm monthly review with a prompt to create an
- * account. Renders outside the AppShell.
- *
- * Phases: landing → parsing → review → error.
- */
-type Phase = 'landing' | 'parsing' | 'review' | 'error'
+import { type GuestReview, type GuestMonthlyReview } from '@/services/guest.service'
+import { useGuestFlow } from './useGuestFlow'
 
 const BANK_NAMES: Record<string, string> = {
   CAIXAGERALDEPOSITOS: 'Caixa Geral de Depósitos',
@@ -72,56 +58,26 @@ function fmtPct(share: number): string {
 }
 
 export function GuestScreen() {
-  const [phase, setPhase] = useState<Phase>('landing')
-  const [fileName, setFileName] = useState<string>('')
-  const [review, setReview] = useState<GuestReview | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('')
-  const [errorIsUnsupported, setErrorIsUnsupported] = useState(true)
-  const guestImport = useGuestImport()
-
-  function handleFile(file: File) {
-    setFileName(file.name)
-    setPhase('parsing')
-    guestImport.mutate(file, {
-      onSuccess: (data) => {
-        setReview(data)
-        setSelectedPeriod(data.months[0]?.period ?? '')
-        setPhase('review')
-      },
-      onError: (err) => {
-        setErrorIsUnsupported(err instanceof UnsupportedBankError)
-        setPhase('error')
-      },
-    })
-  }
-
-  function startOver() {
-    setReview(null)
-    setFileName('')
-    setPhase('landing')
-    guestImport.reset()
-  }
-
-  const currentMonth =
-    review?.months.find((m) => m.period === selectedPeriod) ?? review?.months[0] ?? null
+  const { phase, fileName, review, currentMonth, selectedPeriod, errorIsUnsupported, start, selectPeriod, reset } =
+    useGuestFlow()
 
   return (
     <div className="gl-page">
       <TopBar />
       <main className="gl-main">
-        {phase === 'landing' && <Landing onFile={handleFile} />}
+        {phase === 'landing' && <Landing onFile={start} />}
         {phase === 'parsing' && <Parsing fileName={fileName} />}
         {phase === 'review' && review && currentMonth && (
           <Review
             review={review}
             month={currentMonth}
-            selectedPeriod={currentMonth.period}
-            onSelectPeriod={setSelectedPeriod}
-            onStartOver={startOver}
+            selectedPeriod={selectedPeriod}
+            onSelectPeriod={selectPeriod}
+            onStartOver={reset}
           />
         )}
         {phase === 'error' && (
-          <ErrorState fileName={fileName} unsupported={errorIsUnsupported} onStartOver={startOver} />
+          <ErrorState fileName={fileName} unsupported={errorIsUnsupported} onStartOver={reset} />
         )}
       </main>
       {phase !== 'review' && <Footer />}
