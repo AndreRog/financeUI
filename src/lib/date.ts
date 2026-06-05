@@ -5,7 +5,6 @@
  */
 
 const dayMonth = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
-const monthYear = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' });
 
 function startOfDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -21,10 +20,14 @@ export function relativeDayLabel(date: Date | string, now: Date = new Date()): s
   return dm;
 }
 
-/** "May 2026" — used for period pickers and trend axes. */
-export function monthLabel(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return monthYear.format(d);
+/** "May" / "May 2026" from a period string "YYYY-MM". Uses UTC to avoid off-by-one in UTC+ zones. */
+export function monthLabel(period: string, withYear = false): string {
+  const [y, m] = period.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-GB', {
+    month: 'long',
+    year: withYear ? 'numeric' : undefined,
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(y, m - 1, 1)))
 }
 
 /** "31 May" — bare day + month. */

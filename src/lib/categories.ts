@@ -1,26 +1,34 @@
-/**
- * Category → dot colour. The first six are verbatim from handoff/components.jsx;
- * the rest use the added --cat-* tokens (see tokens.css — names provisional until
- * the backend seed set lands, PRD 0001 / issue 0007). Lookups fall back to
- * --cat-other so an unmapped category still renders a dot.
- */
-export const CAT_COLOR: Record<string, string> = {
-  Groceries: 'var(--cat-groceries)',
-  Transport: 'var(--cat-transport)',
-  Dining: 'var(--cat-dining)',
-  'Bills & utilities': 'var(--cat-bills)',
-  Shopping: 'var(--cat-shopping)',
-  Income: 'var(--income)',
-  // + added categories (provisional)
-  Housing: 'var(--cat-housing)',
-  Health: 'var(--cat-health)',
-  Leisure: 'var(--cat-leisure)',
-  Education: 'var(--cat-education)',
-  'Fees & charges': 'var(--cat-fees)',
-  Savings: 'var(--cat-savings)',
-  Other: 'var(--cat-other)',
+type CategoryEntry = { display: string; color: string }
+
+const REGISTRY = new Map<string, CategoryEntry>([
+  ['HOUSING',              { display: 'Housing',              color: 'var(--cat-housing)' }],
+  ['FOOD & DINING',        { display: 'Food & Dining',        color: 'var(--cat-food)' }],
+  ['TRANSPORT',            { display: 'Transport',            color: 'var(--cat-transport)' }],
+  ['HEALTH',               { display: 'Health',               color: 'var(--cat-health)' }],
+  ['SUBSCRIPTIONS',        { display: 'Subscriptions',        color: 'var(--cat-subscriptions)' }],
+  ['TRAVEL',               { display: 'Travel',               color: 'var(--cat-travel)' }],
+  ['ENTERTAINMENT',        { display: 'Entertainment',        color: 'var(--cat-entertainment)' }],
+  ['MISCELLANEOUS',        { display: 'Miscellaneous',        color: 'var(--cat-other)' }],
+  ['INCOME',               { display: 'Income',               color: 'var(--income)' }],
+  ['SAVINGS & INVESTMENTS',{ display: 'Savings & Investments',color: 'var(--cat-savings)' }],
+  ['TRANSFERS',            { display: 'Transfers',            color: 'var(--excluded)' }],
+])
+
+function key(raw: string): string {
+  return raw.trim().toUpperCase()
 }
 
+/** "FOOD & DINING" → "Food & Dining". Idempotent on already-display labels. */
+export function normaliseLabel(raw: string): string {
+  return REGISTRY.get(key(raw))?.display ?? raw
+}
+
+/** CSS colour var for the given category. Accepts ALL-CAPS or display form. */
 export function catColor(label: string): string {
-  return CAT_COLOR[label] ?? 'var(--cat-other)'
+  return REGISTRY.get(key(label))?.color ?? 'var(--cat-other)'
+}
+
+/** True for all 11 known backend Category names (either form). */
+export function isKnown(label: string): boolean {
+  return REGISTRY.has(key(label))
 }
