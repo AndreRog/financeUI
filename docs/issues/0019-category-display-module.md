@@ -1,6 +1,6 @@
 # Category display module + monthLabel UTC fix
 
-**Status:** open · **PRD:** [0002](../../docs/prds/0002-frontend-guest-flow-category-display.md) · **Depends on:** [0018](0018-vitest-test-harness.md)
+**Status:** closed · **PRD:** [0002](../../docs/prds/0002-frontend-guest-flow-category-display.md) · **Depends on:** [0018](0018-vitest-test-harness.md)
 
 ## Goal
 
