@@ -101,17 +101,14 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Category dots */
-  --color-cat-groceries: var(--cat-groceries);
+  /* Category dots (ADR 0002 — 11 backend System Categories) */
+  --color-cat-food: var(--cat-food);
   --color-cat-transport: var(--cat-transport);
-  --color-cat-dining: var(--cat-dining);
-  --color-cat-bills: var(--cat-bills);
-  --color-cat-shopping: var(--cat-shopping);
+  --color-cat-travel: var(--cat-travel);
+  --color-cat-subscriptions: var(--cat-subscriptions);
   --color-cat-housing: var(--cat-housing);
   --color-cat-health: var(--cat-health);
-  --color-cat-leisure: var(--cat-leisure);
-  --color-cat-education: var(--cat-education);
-  --color-cat-fees: var(--cat-fees);
+  --color-cat-entertainment: var(--cat-entertainment);
   --color-cat-other: var(--cat-other);
   --color-cat-savings: var(--cat-savings);
 

@@ -6,11 +6,8 @@
    the page grows with its content and scrolls naturally.
    ============================================================ */
 
-:root {
-  /* Category-dot aliases used by the breakdown (base set lives in tokens.css). */
-  --cat-food: var(--cat-groceries);
-  --cat-subs: var(--cat-dining);
-}
+/* Category-dot tokens live in tokens.css (--cat-food, --cat-subscriptions, …).
+   The old --cat-groceries/--cat-dining aliases were removed in issue 0019. */
 
 /* ---- Page frame ---- */
 .gl-page {
