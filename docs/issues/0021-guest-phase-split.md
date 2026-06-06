@@ -1,6 +1,6 @@
 # Split GuestScreen into phase components
 
-**Status:** open · **PRD:** [0002](../../docs/prds/0002-frontend-guest-flow-category-display.md) · **Depends on:** [0019](0019-category-display-module.md), [0020](0020-guest-flow-state-machine.md)
+**Status:** closed · **PRD:** [0002](../../docs/prds/0002-frontend-guest-flow-category-display.md) · **Depends on:** [0019](0019-category-display-module.md), [0020](0020-guest-flow-state-machine.md)
 
 ## Goal
 
